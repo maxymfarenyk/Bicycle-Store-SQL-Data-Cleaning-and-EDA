@@ -56,7 +56,7 @@ CREATE TABLE Transactions (
     product_line TEXT,
     product_class TEXT,
     product_size TEXT,
-    standard_cost TEXT,
+    standart_cost TEXT,
     product_first_sold_date DATE
 );
 ```
@@ -80,6 +80,113 @@ SELECT * FROM transactions
 LIMIT 10
 ```
 ![image](https://github.com/user-attachments/assets/8c1dbd19-9cad-4764-a8aa-f71606bcd436)
+## 5. Очищення таблиць
+### Підготовка до очищення таблиць
+Щоб очистити таблиці та привести їх до гарного вигляду потрібно спершу створити ідентичні запасні таблиці. Це потрібно для того щоб випадково не втратити якісь важливі дані в процесі видалення непотрібних. Продемонструю це на прикладі таблиці customer_demographic
+```
+CREATE TABLE demographic_staging
+(LIKE customer_demographic);
 
+INSERT INTO demographic_staging
+SELECT *
+FROM customer_demographic;
 
+SELECT *
+FROM demographic_staging
+```
+![image](https://github.com/user-attachments/assets/d3db37f2-78e7-4c27-83aa-04573bc53504)
+Таблиці ідентичні. Далі роблю те саме для таблиць customer_address та transactions.
+```
+CREATE TABLE address_staging
+(LIKE customer_address);
+
+INSERT INTO address_staging
+SELECT *
+FROM customer_address;
+
+CREATE TABLE transactions_staging
+(LIKE transactions);
+
+INSERT INTO transactions_staging
+SELECT *
+FROM transactions;
+```
+### Видалення дублікатів
+Для того щоб виявити дублікати у таблицях я використовую функцію ROW_NUMBER(), яка генерує унікальний номер для рядка в межах певної групи. Ці групи я визначаю через PARTITION BY.
+
+Також щоб виводились лише ті рядки, де номер рядка більше 1 (тобто якраз ті, що є дублікатами) використовую CTE (Common Table Expression), який дозволить використовувати WHERE для тимчасово створеного стовпця що показує номер рядка.
+
+Таблиця demographic_staging
+```
+with duplicate_cte as
+(
+SELECT *,
+ROW_NUMBER() OVER(
+PARTITION BY first_name, last_name, dob) as row_num
+FROM demographic_staging
+)
+SELECT *
+FROM duplicate_cte
+WHERE row_num > 1;
+```
+![image](https://github.com/user-attachments/assets/f2aad0b6-a7f1-455b-bc8e-33c338f5d14f)
+
+Рядків немає, отже дублікатів у цій таблиці немає. 
+У таблиці address_staging ситуація аналогічна, а от у таблиці transactions_staging ситуація цікавіша
+Таблиця transactions_staging
+```
+with duplicate_cte as
+(
+SELECT *,
+ROW_NUMBER() OVER(
+PARTITION BY product_id, customer_id, transaction_date, online_order, order_status) as row_num
+FROM transactions_staging
+)
+SELECT *
+FROM duplicate_cte
+WHERE row_num > 1;
+```
+![image](https://github.com/user-attachments/assets/7b0da640-4e1d-4b93-a5a2-afdc253f74fa)
+
+Є один рядок, тобто в таблиці є 1 дублікат. Щоб пересвідчитись я вирішив побачити ці два записи
+```
+SELECT *
+FROM transactions_staging
+WHERE product_id = 0 and customer_id = 1840 and transaction_date='2017-07-11'
+```
+![image](https://github.com/user-attachments/assets/bf3f4e42-0761-4d16-b916-995fea174001)
+
+Тут я помітив, що хоч product_id ідентичний, але ствопці brand, product_size та standart_cost відрізняються.
+Тому я вирішив подивитись більше записів із цим product_id
+```
+SELECT product_id, brand, product_line, product_class, product_size, standart_cost
+FROM transactions_staging
+WHERE product_id = 0;
+```
+![image](https://github.com/user-attachments/assets/fb070cc4-5570-4cac-aec6-3d94e73c8445)
+
+Помітно, що у всіх стовпцях, які описують товар зустрічають зовсім різні значення. З цього ми можемо зрозуміти, що стовпець product_id не є інформативним і є необхідність його замінити, але це буде зроблено у наступних кроках
+
+### Стандартизація даних
+Таблиця demographic_staging
+```
+SELECT DISTINCT gender
+FROM demographic_staging
+```
+![image](https://github.com/user-attachments/assets/51aaa9f4-00f9-41dc-8a5e-f09a48942111)
+
+Потрібно зробити щоб було лише Female, Male, Unknown
+
+```
+UPDATE demographic_staging
+SET gender = 
+    CASE
+        WHEN gender IN ('Femal', 'F') THEN 'Female'
+        WHEN gender = 'M' THEN 'Male'
+        WHEN gender = 'U' THEN 'Unknown'
+		ELSE gender
+    END;
+```
+
+![image](https://github.com/user-attachments/assets/b93d8e7e-86cd-465d-990c-2e86e3d87988)
 
