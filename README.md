@@ -373,8 +373,8 @@ ALTER COLUMN standart_cost TYPE NUMERIC USING REPLACE(REPLACE(standart_cost, '$'
 ![image](https://github.com/user-attachments/assets/b4485bba-0315-4d3c-8e26-085e180fdd1e)
 
 ### 6. Перенесення даних із запасних таблиць у фінальні
-
 Перенесемо всі дані у початкові таблиці
+#### 1) Таблиця customer_demographic
 ```
 TRUNCATE TABLE customer_demographic CASCADE;
 
@@ -384,9 +384,8 @@ SELECT * FROM demographic_staging;
 SELECT * FROM customer_demographic
 ORDER BY customer_id;
 ```
-#### Таблиця customer_demographic
 ![image](https://github.com/user-attachments/assets/91d631dd-054e-4a3e-91e3-8c58f1069ba8)
-
+#### 2) Таблиця customer_address
 ```
 TRUNCATE TABLE customer_address;
 
@@ -396,9 +395,8 @@ SELECT * FROM address_staging;
 SELECT * FROM customer_address
 ORDER BY address_id;
 ```
-#### Таблиця customer_address
 ![image](https://github.com/user-attachments/assets/d7b3b314-48c2-48d5-93e4-8a95a9c831e2)
-
+#### 3) Таблиця transactions
 ```
 TRUNCATE TABLE transactions;
 
@@ -422,5 +420,4 @@ SELECT transaction_id, product_id, customer_id, transaction_date, online_order, 
 SELECT * FROM transactions
 ORDER BY transaction_id;
 ```
-#### Таблиця transactions
 ![image](https://github.com/user-attachments/assets/1df1be14-74b5-452c-9457-c7e11251dcbb)
