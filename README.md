@@ -168,7 +168,7 @@ WHERE product_id = 0;
 Помітно, що у всіх стовпцях, які описують товар зустрічають зовсім різні значення. З цього ми можемо зрозуміти, що стовпець product_id не є інформативним і є необхідність його замінити, але це буде зроблено у наступних кроках
 
 ### Стандартизація даних
-#### 1. Таблиця demographic_staging
+#### 1) Таблиця demographic_staging
 ##### а) стовпець gender
 ```
 SELECT DISTINCT gender
@@ -233,7 +233,7 @@ ALTER COLUMN owns_car TYPE BOOLEAN USING owns_car::BOOLEAN;
 ```
 ![image](https://github.com/user-attachments/assets/5e300fc0-aa1e-4ead-b356-09a91baf6db0)
 
-#### 2. Таблиця address_staging
+#### 2) Таблиця address_staging
 ##### а) стовпець state
 ```
 SELECT DISTINCT state
@@ -252,7 +252,7 @@ END;
 ```
 ![image](https://github.com/user-attachments/assets/5ec466bc-a1c1-4ba1-9014-03e08f49d28d)
 
-#### 3. Таблиця transactions_staging
+#### 3) Таблиця transactions_staging
 Перш ніж стандартизувати дані таблиці необхідно вирішити проблему із нормалізацією. У цій таблиці є стовпці transaction_id та product_id. Від transaction_id залежать стовпці, що описують характеристики транзакції, а від product_id - ті, що описують характеристики товару. Це порушує умови 2 нормальної форми, тому треба створити ще одну таблицю, де будуть зберігатись лише товари. 
 
 ##### а) нормалізація таблиці
@@ -350,7 +350,7 @@ FROM transactions_staging;
 ```
 ![image](https://github.com/user-attachments/assets/188af8f2-df9f-4db4-a542-74160b430976)
 
-#### 4. Таблиця products
+#### 4) Таблиця products
 ##### а) стовпець product_hash_id та рядок null
 ![image](https://github.com/user-attachments/assets/fd7c0ee5-ae0b-4bd8-b513-b6247141eff0)
 
@@ -372,7 +372,7 @@ ALTER COLUMN standart_cost TYPE NUMERIC USING REPLACE(REPLACE(standart_cost, '$'
 ```
 ![image](https://github.com/user-attachments/assets/b4485bba-0315-4d3c-8e26-085e180fdd1e)
 
-### Перенесення даних із запасних таблиць у фінальні
+### 6. Перенесення даних із запасних таблиць у фінальні
 
 Перенесемо всі дані у початкові таблиці
 ```
@@ -384,6 +384,7 @@ SELECT * FROM demographic_staging;
 SELECT * FROM customer_demographic
 ORDER BY customer_id;
 ```
+#### Таблиця customer_demographic
 ![image](https://github.com/user-attachments/assets/91d631dd-054e-4a3e-91e3-8c58f1069ba8)
 
 ```
@@ -395,6 +396,7 @@ SELECT * FROM address_staging;
 SELECT * FROM customer_address
 ORDER BY address_id;
 ```
+#### Таблиця customer_address
 ![image](https://github.com/user-attachments/assets/d7b3b314-48c2-48d5-93e4-8a95a9c831e2)
 
 ```
@@ -420,4 +422,5 @@ SELECT transaction_id, product_id, customer_id, transaction_date, online_order, 
 SELECT * FROM transactions
 ORDER BY transaction_id;
 ```
+#### Таблиця transactions
 ![image](https://github.com/user-attachments/assets/1df1be14-74b5-452c-9457-c7e11251dcbb)
