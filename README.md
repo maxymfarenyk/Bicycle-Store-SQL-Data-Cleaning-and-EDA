@@ -188,8 +188,22 @@ SET gender =
 	ELSE gender
     END;
 ```
-
 ![image](https://github.com/user-attachments/assets/b93d8e7e-86cd-465d-990c-2e86e3d87988)
+
+Я вирішив подивитись у скількох покупців стать вказана як 'Unknown'
+```
+SELECT * FROM demographic_staging
+WHERE gender = 'Unknown';
+```
+![image](https://github.com/user-attachments/assets/38b5fcf5-b5b6-4da3-a203-6e11110657a7)
+
+Бачимо, що у всіх дата народження не вказана, окрім одного покупця, у котрого дата народження не є реалістичною, тому її варто очистити.
+```
+UPDATE demographic_staging
+SET dob = NULL
+WHERE dob = '1843-12-21';
+```
+![image](https://github.com/user-attachments/assets/15beda61-cb86-4874-9513-1ce23802b70a)
 
 ##### б) стовпець job_title
 ```
@@ -421,3 +435,14 @@ SELECT * FROM transactions
 ORDER BY transaction_id;
 ```
 ![image](https://github.com/user-attachments/assets/1df1be14-74b5-452c-9457-c7e11251dcbb)
+
+Залишається лише зробити product_id foreign_key, що посилатиметься на таблицю products
+```
+ALTER TABLE transactions
+ADD CONSTRAINT transactions_product_id_fkey
+FOREIGN KEY (product_id)
+REFERENCES products(product_id);
+```
+![image](https://github.com/user-attachments/assets/34e4de19-e077-475c-b3ee-74d208493d78)
+
+
