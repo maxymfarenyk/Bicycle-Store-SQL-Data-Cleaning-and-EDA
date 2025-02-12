@@ -386,9 +386,9 @@ ALTER COLUMN standart_cost TYPE NUMERIC USING REPLACE(REPLACE(standart_cost, '$'
 ```
 ![image](https://github.com/user-attachments/assets/b4485bba-0315-4d3c-8e26-085e180fdd1e)
 
-### 6. Перенесення даних із запасних таблиць у фінальні
+## 6. Перенесення даних із запасних таблиць у фінальні
 Перенесемо всі дані у початкові таблиці
-#### 1) Таблиця customer_demographic
+### 1) Таблиця customer_demographic
 ```
 TRUNCATE TABLE customer_demographic CASCADE;
 
@@ -399,7 +399,7 @@ SELECT * FROM customer_demographic
 ORDER BY customer_id;
 ```
 ![image](https://github.com/user-attachments/assets/91d631dd-054e-4a3e-91e3-8c58f1069ba8)
-#### 2) Таблиця customer_address
+### 2) Таблиця customer_address
 ```
 TRUNCATE TABLE customer_address;
 
@@ -410,7 +410,7 @@ SELECT * FROM customer_address
 ORDER BY address_id;
 ```
 ![image](https://github.com/user-attachments/assets/d7b3b314-48c2-48d5-93e4-8a95a9c831e2)
-#### 3) Таблиця transactions
+### 3) Таблиця transactions
 ```
 TRUNCATE TABLE transactions;
 
@@ -444,5 +444,9 @@ FOREIGN KEY (product_id)
 REFERENCES products(product_id);
 ```
 ![image](https://github.com/user-attachments/assets/34e4de19-e077-475c-b3ee-74d208493d78)
+
+## 7. Візуалізація у Power BI
+Дані з SQL було імпортовано у Power BI та зроблено візуалізацію
+![image](https://github.com/user-attachments/assets/49aa60ef-2157-4236-b5db-bf8f3538c35f)
 
 
