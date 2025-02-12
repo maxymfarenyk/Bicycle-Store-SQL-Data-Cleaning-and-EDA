@@ -446,7 +446,8 @@ REFERENCES products(product_id);
 ![image](https://github.com/user-attachments/assets/34e4de19-e077-475c-b3ee-74d208493d78)
 
 ## 7. Візуалізація у Power BI
-Дані з SQL було імпортовано у Power BI та зроблено візуалізацію
+Дані з SQL було імпортовано у Power BI та зроблено [візуалізацію](https://github.com/maxymfarenyk/Bicycle-Store-SQL-Data-Cleaning-and-EDA/blob/main/Bicycle_Store.pbix)
+
 ![image](https://github.com/user-attachments/assets/49aa60ef-2157-4236-b5db-bf8f3538c35f)
 
 
