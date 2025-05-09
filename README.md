@@ -1,16 +1,24 @@
 # Bicycle-Store-SQL-Data-Cleaning-and-EDA
-У цьому файлі представлено покроковий опис виконання проєкту з дата клінінгу та аналізу датасету магазина велосипедів
-## 1. Завантаження [датасету із Kaggle](https://www.kaggle.com/datasets/rohitsahoo/bicycle-store-dataset)
-Я обрав саме цей датасет через те, що він містить велику кількість даних, завдяки чому його аналіз буде мати сенс.
-## 2. Підготовка до імпорту у PostgreSQL
-При перегляді даних на Kaggle я помітив, що у деяких файлах є дуже багато порожніх стовпців, які позначені як ті, що містять дані. Також у файлі "Customer Demographic.csv" є зайвий стовпець Default з якимись незрозумілими даними різного вигляду, тому його теж не варто імпортувати в PostgreSQL. Використовуючи Microsoft Excel я відкрив ці файли та прибрав зайві стовпці.
-## 3. Створення бази даних та таблиць у PostgreSQL
-### Створення бази даних
+
+This readme file provides a step-by-step description of a data cleaning and analysis project for a bicycle shop dataset.
+
+## 1. Downloading [the dataset from Kaggle](https://www.kaggle.com/datasets/rohitsahoo/bicycle-store-dataset)
+
+I chose this particular dataset because it contains a large amount of data, which would make its analysis meaningful.
+
+## 2. Preparation for data import into PostgreSQL
+
+While viewing the data on Kaggle, I noticed that some files contain a lot of empty columns that are marked as containing data. Also, the "Customer Demographic.csv" file has an extra 'Default' column with some unclear data of various formats, so it should not be imported into PostgreSQL either. Using Microsoft Excel, I opened these files and removed the unnecessary columns.
+
+## 3. Creating a database and tables in PostgreSQL
+### Creating a database
 ```
 CREATE DATABASE Bicycle_Store;
 ```
-### Створення таблиць
-Переглянувши файли я звернув увагу, що файл "Customer List.csv" містить лише дані, що вже є в таблицях "Customer Demographic.csv" та "Customer Address.csv", тому імпортувати його немає сенсу. Тому імпортуватиму лише 3 файли і відповідно створю таблицю для кожного з них.
+### Creating tables
+
+I reviewed the files, and noticed that the "Customer List.csv" file contains only data that is already present in the "Customer Demographic.csv" and "Customer Address.csv" tables, so importing it makes no sense. Therefore, I will only import 3 files and create a table for each of them accordingly.
+
 ### Customer Demographic.csv
 ```
 CREATE TABLE customer_demographic (
@@ -29,7 +37,8 @@ CREATE TABLE customer_demographic (
 );
 ```
 ### Customer Address.csv
-В цій таблиці я створив додатковий стовпець address_id з автоінкрементом, який буде виступати Primary Key для цієї таблиці, оскільки використовування customer_id як Primary Key у двох таблицях було б порушенням нормалізації та заплутувало б при роботі з ними.
+
+In this table, I created an additional *address_id* column with auto-increment, which will serve as the Primary Key for this table. This is because using *customer_id* as a Primary Key in two tables would violate normalization rules and complicate working with them.
 ```
 CREATE TABLE customer_address (
 	address_id SERIAL PRIMARY KEY,
@@ -60,29 +69,36 @@ CREATE TABLE Transactions (
 	product_first_sold_date DATE
 );
 ```
-## 4. Заповнення таблиць
-Щоб імпортувати дані я використовую вбудований у Postgres інструмент "Import/Export data", для кожної таблиці вказую шлях файлу з якого імпортую дані, вказую що вони містять заголовковий рядок та обираю стовпці які потрібно імпортувати. Після цього виводжу перші 10 рядків кожної таблиці щоб перевірити чи дані присутні.
+## 4. Filling the tables
+
+I use the built-in Postgres "Import/Export data" tool for importing data. I specify the path to the file from which I am importing the data for each table. I indicate that they contain a header row, and select the columns to be imported. After that, I select the first 10 rows of each table to check if the data is present.
+
 ### Customer Demographic.csv
 ```
 SELECT * FROM customer_demographic
 LIMIT 10
 ```
 ![image](https://github.com/user-attachments/assets/0e85adde-34a1-4bf7-b58b-46f6e3d3c680)
+
 ### Customer Demographic.csv
 ```
 SELECT * FROM customer_address
 LIMIT 10
 ```
 ![image](https://github.com/user-attachments/assets/162f2255-c47c-40b8-ab9b-a0c85de94515)
+
 ### Transactions.csv
 ```
 SELECT * FROM transactions
 LIMIT 10
 ```
 ![image](https://github.com/user-attachments/assets/8c1dbd19-9cad-4764-a8aa-f71606bcd436)
-## 5. Очищення таблиць
-### Підготовка до очищення таблиць
-Щоб очистити таблиці та привести їх до гарного вигляду потрібно спершу створити ідентичні запасні таблиці. Це потрібно для того щоб випадково не втратити якісь важливі дані в процесі видалення непотрібних. Продемонструю це на прикладі таблиці customer_demographic
+
+## 5. Cleaning the tables
+### Preparation for cleaning
+
+To clean the tables and make them looking good, at first it's necessary to create identical backup tables. This is needed to prevent any accidental loss of important data during the process of deleting unnecessary information. I will demonstrate this using the *customer_demographic* table as an example.
+
 ```
 CREATE TABLE demographic_staging
 (LIKE customer_demographic);
@@ -95,7 +111,9 @@ SELECT *
 FROM demographic_staging
 ```
 ![image](https://github.com/user-attachments/assets/d3db37f2-78e7-4c27-83aa-04573bc53504)
-Таблиці ідентичні. Далі роблю те саме для таблиць customer_address та transactions.
+
+The tables are identical. Next, I do the same for the *customer_address* and *transactions* tables.
+
 ```
 CREATE TABLE address_staging
 (LIKE customer_address);
@@ -111,12 +129,13 @@ INSERT INTO transactions_staging
 SELECT *
 FROM transactions;
 ```
-### Видалення дублікатів
-Для того щоб виявити дублікати у таблицях я використовую функцію ROW_NUMBER(), яка генерує унікальний номер для рядка в межах певної групи. Ці групи я визначаю через PARTITION BY.
+### Deleting duplicates
 
-Також щоб виводились лише ті рядки, де номер рядка більше 1 (тобто якраз ті, що є дублікатами) використовую CTE (Common Table Expression), який дозволить використовувати WHERE для тимчасово створеного стовпця що показує номер рядка.
+To detect duplicates in tables, I use the ROW_NUMBER() function, which generates a unique number for a row within a specific group. I define these groups by using PARTITION BY.
 
-Таблиця demographic_staging
+Also, to display only those rows where the row number is greater than 1 (precisely those that are duplicates), I use a CTE (Common Table Expression), which allows using WHERE for a temporary column that shows the row number.
+
+demographic_staging table
 ```
 with duplicate_cte as
 (
@@ -131,9 +150,10 @@ WHERE row_num > 1;
 ```
 ![image](https://github.com/user-attachments/assets/f2aad0b6-a7f1-455b-bc8e-33c338f5d14f)
 
-Рядків немає, отже дублікатів у цій таблиці немає. 
-У таблиці address_staging ситуація аналогічна, а от у таблиці transactions_staging ситуація цікавіша
-Таблиця transactions_staging
+There are no rows, so there are no duplicates in this table.
+The situation is similar in the *address_staging* table, but in the *transactions_staging* table the situation is more interesting.
+
+transactions_staging table
 ```
 with duplicate_cte as
 (
@@ -148,7 +168,8 @@ WHERE row_num > 1;
 ```
 ![image](https://github.com/user-attachments/assets/7b0da640-4e1d-4b93-a5a2-afdc253f74fa)
 
-Є один рядок, тобто в таблиці є 1 дублікат. Щоб пересвідчитись я вирішив побачити ці два записи
+There is one row, meaning there is 1 duplicate in the table. To confirm this I decided to see these two records.
+
 ```
 SELECT *
 FROM transactions_staging
@@ -156,8 +177,8 @@ WHERE product_id = 0 and customer_id = 1840 and transaction_date='2017-07-11'
 ```
 ![image](https://github.com/user-attachments/assets/bf3f4e42-0761-4d16-b916-995fea174001)
 
-Тут я помітив, що хоч product_id ідентичний, але ствопці brand, product_size та standart_cost відрізняються.
-Тому я вирішив подивитись більше записів із цим product_id
+Here I noticed that although the *product_id* is identical, the *brand*, *product_size*, and *standard_cost* columns differ. Therefore, I decided to look at more records with this *product_id*.
+
 ```
 SELECT product_id, brand, product_line, product_class, product_size, standart_cost
 FROM transactions_staging
@@ -165,18 +186,18 @@ WHERE product_id = 0;
 ```
 ![image](https://github.com/user-attachments/assets/fb070cc4-5570-4cac-aec6-3d94e73c8445)
 
-Помітно, що у всіх стовпцях, які описують товар зустрічають зовсім різні значення. З цього ми можемо зрозуміти, що стовпець product_id не є інформативним і є необхідність його замінити, але це буде зроблено у наступних кроках
+It is noticeable that completely different values are encountered in all columns describing the product. From this, we can understand that the product_id column is not informative and needs to be replaced, and this will be done in the following steps.
 
-### Стандартизація даних
-#### 1) Таблиця demographic_staging
-##### а) стовпець gender
+### Data Standardization
+#### 1) demographic_staging table
+##### a) gender column
 ```
 SELECT DISTINCT gender
 FROM demographic_staging
 ```
 ![image](https://github.com/user-attachments/assets/51aaa9f4-00f9-41dc-8a5e-f09a48942111)
 
-Потрібно зробити щоб було лише Female, Male, Unknown
+It needs to be changed so that there are only Female, Male and Unknown.
 
 ```
 UPDATE demographic_staging
@@ -190,14 +211,16 @@ SET gender =
 ```
 ![image](https://github.com/user-attachments/assets/b93d8e7e-86cd-465d-990c-2e86e3d87988)
 
-Я вирішив подивитись у скількох покупців стать вказана як 'Unknown'
+I decided to see how many customers have their gender listed as 'Unknown'.
+
 ```
 SELECT * FROM demographic_staging
 WHERE gender = 'Unknown';
 ```
 ![image](https://github.com/user-attachments/assets/38b5fcf5-b5b6-4da3-a203-6e11110657a7)
 
-Бачимо, що у всіх дата народження не вказана, окрім одного покупця, у котрого дата народження не є реалістичною, тому її варто очистити.
+We see that the date of birth is not specified for everyone, except for one customer whose date of birth is not realistic, so it should be cleaned.
+
 ```
 UPDATE demographic_staging
 SET dob = NULL
@@ -205,7 +228,7 @@ WHERE dob = '1843-12-21';
 ```
 ![image](https://github.com/user-attachments/assets/15beda61-cb86-4874-9513-1ce23802b70a)
 
-##### б) стовпець job_title
+##### b) job_title column
 ```
 SELECT DISTINCT job_title
 FROM demographic_staging
@@ -213,7 +236,7 @@ ORDER BY job_title;
 ```
 ![image](https://github.com/user-attachments/assets/80e4b047-a3fc-455e-b2ca-97b7b5e1e962)
 
-Помітно що деякі професії закінчуються римськими цифрами. Приберемо їх щоб об'єднати однакові професії
+Some professions end with the Roman numerals. Let's remove them to merge identical professions.
 
 ```
 UPDATE demographic_staging
@@ -222,14 +245,15 @@ WHERE job_title ~ ' (I|II|III|IV)$';
 ```
 ![image](https://github.com/user-attachments/assets/e3a75678-dc56-4a58-a2af-63b39b54c220)
 
-##### в) стовпці deceased_indicator, owns_car
+##### c) deceased_indicator and owns_car columns
 ```
 SELECT DISTINCT deceased_indicator, owns_car
 FROM demographic_staging;
 ```
 ![image](https://github.com/user-attachments/assets/8d9b5f27-415d-42d9-9c48-cc1ef778138f)
 
-Змінимо тип даних цих стовпців на boolean, попередньо стандартизувавши написання 
+Let's change the data type of these columns to boolean, after standardizing the values.
+
 ```
 UPDATE demographic_staging
 SET deceased_indicator = CASE
@@ -247,15 +271,15 @@ ALTER COLUMN owns_car TYPE BOOLEAN USING owns_car::BOOLEAN;
 ```
 ![image](https://github.com/user-attachments/assets/5e300fc0-aa1e-4ead-b356-09a91baf6db0)
 
-#### 2) Таблиця address_staging
-##### а) стовпець state
+#### 2) address_staging table
+##### a) state column
 ```
 SELECT DISTINCT state
 FROM address_staging;
 ```
 ![image](https://github.com/user-attachments/assets/1315d579-c2a6-4bc8-bc01-fba23117380b)
 
-Не всі дані в однаковому форматі
+Not all data is in the same format.
 ```
 UPDATE address_staging
 SET state = CASE
@@ -266,12 +290,14 @@ END;
 ```
 ![image](https://github.com/user-attachments/assets/5ec466bc-a1c1-4ba1-9014-03e08f49d28d)
 
-#### 3) Таблиця transactions_staging
-Перш ніж стандартизувати дані таблиці необхідно вирішити проблему із нормалізацією. У цій таблиці є стовпці transaction_id та product_id. Від transaction_id залежать стовпці, що описують характеристики транзакції, а від product_id - ті, що описують характеристики товару. Це порушує умови 2 нормальної форми, тому треба створити ще одну таблицю, де будуть зберігатись лише товари. 
+#### 3) transactions_staging table
 
-##### а) нормалізація таблиці
+Before standardizing the table data, it is necessary to resolve the normalization issue. There are *transaction_id* and *product_id* columns in the table. Columns describing transaction characteristics depend on *transaction_id*, while those describing product characteristics depend on *product_id*. This violates the conditions of the 2nd normal form, so another table needs to be created where only products will be stored.
 
-Також раніше згадувалась проблема неінформативності стовпця product_id, тому треба вирішити і її. Додамо ще один стовпець, який буде заповнюватись хешем за допомогою вбудованого алгоритму хешування md5. Він буде унікальний для кожної унікальної комбінації стовпців brand, product_line, product_class, product_size, standart_cost. 
+##### a) table normalisation
+
+Also, the problem of the product_id column being uninformative was mentioned earlier, so it needs to be resolved as well. Let's add another column that will be populated with a hash using the built-in **MD5 hashing algorithm**. It will be unique for each unique combination of the *brand*, *product_line*, *product_class*, *product_size*, and *standard_cost* columns.
+
 ```
 ALTER TABLE transactions_staging ADD COLUMN product_hash_id TEXT;
 
@@ -284,9 +310,10 @@ order by product_hash_id;
 ```
 ![image](https://github.com/user-attachments/assets/b957b71d-9abe-4438-b496-76976b980684)
 
-Стовпець product_first_sold_date я до уваги не беру, оскільки він буває різний навіть тоді, коли всі інші характеристики ідентичні. Тому цей стовпець в подальшому буде видалений.
+I am not considering the *product_first_sold_date* column because it can differ even when all other characteristics are identical. Therefore, this column will be deleted later.
 
-Далі створимо таблицю products та заповнимо її значеннями товарів з унікальним хешем із попередньої таблиці
+Next, let's create a *products* table and populate it with product values using the unique hash from the previous table.
+
 ```
 CREATE TABLE products (
 	product_id SERIAL PRIMARY KEY,
@@ -308,7 +335,8 @@ ORDER BY product_id;
 ```
 ![image](https://github.com/user-attachments/assets/a3bbfeea-3811-49c7-abe0-94765de5bb56)
 
-Після цього замінимо неінформативний product_id у таблиці transactions_staging на новостворений product_id із products.
+After this, the uninformative *product_id* in the transactions_staging table has to be replaced with the newly created *product_id* from *products*.
+
 ```
 UPDATE transactions_staging
 SET product_id = products.product_id
@@ -321,12 +349,16 @@ WHERE product_id > 0
 ORDER BY product_id;
 ```
 ![image](https://github.com/user-attachments/assets/ac1c4654-9a63-4f68-a20b-ac9ac679b6a7)
-Можна помітити, що є дуже багато транзакцій, де про товар немає жодної інформації. Такі дані не є інформативними тому їх можна видалити
+
+There are many transactions with no available information about the product. Such data is not informative, so it has to be deleted.
+
 ```
 DELETE FROM transactions_staging
 WHERE product_id = 0;
 ```
-Після цього видалимо непотрібні стовпці
+
+Now, let's delete the unnecessary columns.
+
 ```
 ALTER TABLE transactions_staging
 DROP COLUMN product_hash_id,
@@ -343,9 +375,10 @@ order by product_id;
 ```
 ![image](https://github.com/user-attachments/assets/8eb07ab0-25e2-4ef5-b323-55148d8fc783)
 
-##### б) стовпець order_status
+##### b) order_status column
 
-В цьому стовпці лише два унікальні значення, тому змінимо тип на bool
+There are only two unique values, so let's change the type to boolean.
+
 ```
 UPDATE transactions_staging
 SET order_status = CASE
@@ -364,11 +397,12 @@ FROM transactions_staging;
 ```
 ![image](https://github.com/user-attachments/assets/188af8f2-df9f-4db4-a542-74160b430976)
 
-#### 4) Таблиця products
-##### а) стовпець product_hash_id та рядок null
+#### 4) products table
+##### a) product_hash_id column and empty row
 ![image](https://github.com/user-attachments/assets/fd7c0ee5-ae0b-4bd8-b513-b6247141eff0)
 
-Видалимо порожній рядок та непотрібний стовпець
+Let's remove empty row and unnecessary column.
+
 ```
 DELETE FROM products
 WHERE product_hash_id is null;
@@ -378,17 +412,21 @@ DROP COLUMN product_hash_id;
 ```
 ![image](https://github.com/user-attachments/assets/7856a051-0807-4810-9a62-6ce5dd3e7bcf)
 
-##### б) стовпець standart_cost
-Змінимо тип даних на numeric, прибравши із запису значки '$' та ','
+##### b) standart_cost column
+
+Let's change the data type to numeric, removing the '$' and ',' symbols from the entries.
+
 ```
 ALTER TABLE products
 ALTER COLUMN standart_cost TYPE NUMERIC USING REPLACE(REPLACE(standart_cost, '$', ''), ',', '')::NUMERIC;
 ```
 ![image](https://github.com/user-attachments/assets/b4485bba-0315-4d3c-8e26-085e180fdd1e)
 
-## 6. Перенесення даних із запасних таблиць у фінальні
-Перенесемо всі дані у початкові таблиці
-### 1) Таблиця customer_demographic
+## 6. Transferring data from backup tables
+
+Let's transfer all data to the original tables.
+
+### 1) customer_demographic table
 ```
 TRUNCATE TABLE customer_demographic CASCADE;
 
@@ -399,7 +437,7 @@ SELECT * FROM customer_demographic
 ORDER BY customer_id;
 ```
 ![image](https://github.com/user-attachments/assets/91d631dd-054e-4a3e-91e3-8c58f1069ba8)
-### 2) Таблиця customer_address
+### 2) customer_address table
 ```
 TRUNCATE TABLE customer_address;
 
@@ -410,7 +448,7 @@ SELECT * FROM customer_address
 ORDER BY address_id;
 ```
 ![image](https://github.com/user-attachments/assets/d7b3b314-48c2-48d5-93e4-8a95a9c831e2)
-### 3) Таблиця transactions
+### 3) transactions table
 ```
 TRUNCATE TABLE transactions;
 
@@ -436,7 +474,8 @@ ORDER BY transaction_id;
 ```
 ![image](https://github.com/user-attachments/assets/1df1be14-74b5-452c-9457-c7e11251dcbb)
 
-Залишається лише зробити product_id foreign_key, що посилатиметься на таблицю products
+The only thing left is to make *product_id* a foreign key that references the products table.
+
 ```
 ALTER TABLE transactions
 ADD CONSTRAINT transactions_product_id_fkey
@@ -445,65 +484,72 @@ REFERENCES products(product_id);
 ```
 ![image](https://github.com/user-attachments/assets/34e4de19-e077-475c-b3ee-74d208493d78)
 
-## 7. Візуалізація у Power BI
-Дані з SQL було імпортовано у Power BI та зроблено [візуалізацію](https://github.com/maxymfarenyk/Bicycle-Store-SQL-Data-Cleaning-and-EDA/blob/main/Bicycle_Store.pbix)
+## 7. Visualization using Power BI
+The data from PostgreSQL was imported into Power BI and the [visualization](https://github.com/maxymfarenyk/Bicycle-Store-SQL-Data-Cleaning-and-EDA/blob/main/Bicycle_Store.pbix) was created.
 
 ![image](https://github.com/user-attachments/assets/97e23aae-de61-403d-8e86-0324a5d95309)
 
-## 8. Аналіз даних
-В ході аналізу даних було виявлено певні закономірності, зважаючи на які бізнес зможе збільшити свої продажі.
+## 8. Data Analysis
 
-### 1) Основні покупці
-#### а) Вік
+The data analysis revealed specific patterns that, if considered, could lead to increased sales.
+
+### 1) Main Customers
+#### a) Age
 ![image](https://github.com/user-attachments/assets/0f90500a-c4d1-4e9a-8bb9-b5e0be82a0f1)
-![image](https://github.com/user-attachments/assets/93ee468e-3452-4b65-aa44-f441dfdf2162)
+![image](https://github.com/user-attachments/assets/93ee468e-3452-4b65-aa44-f441dfdf2162) 
 
-Більшість покупок зроблено клієнтами, що народились в період з 1974 по 1980 рік, враховуючи що датасет 2017 року, то це люди від 37 до 43 років. 
-#### б) Сфера діяльності
+Most purchases were made by customers born between 1974 and 1980, which, considering the dataset is from 2017, means these are people aged 37 to 43.
+
+#### b) Job Industry
 ![image](https://github.com/user-attachments/assets/9aa85975-378f-4420-91a3-90d293c46276)
 
-Найчастішими покупцями є люди, що працюють у сферах виробництва, фінансів та охорони здоров'я.
-#### в) Рівень достатку
+The most frequent customers are people working in the manufacturing, finance, and healthcare sectors.
+
+#### c) Wealth Segment
+
 ![image](https://github.com/user-attachments/assets/7ea3dfd9-1dfc-451b-9ef7-d87c30dc9b83)
 
-Половину від усіх покупок було здійснено масовими покупцями.
-#### г) Місце проживання
+Half of all purchases were made by mass-market customers. However, each of the other segments accounted for approximately a quarter of the total purchases.
+
+#### d) Location 
 ![image](https://github.com/user-attachments/assets/6ecb54c9-045e-41de-8592-f2ab2ea81d55)
 
-Із 19.8 тисяч покупок більше 10 тисяч було здійснено у штаті Новий Південний Уельс.
-#### Висновок
-Отже, бізнесу варто сфокусувати свій маркетинг на цих групах покупців, оскільки вони роблять найбільше покупок.
+Out of 19.8 thousand purchases, more than 10 thousand were made in the state of New South Wales.
 
-### 2) Сезонність та тренди
+#### Conclusion
+
+Therefore, the business should focus its marketing efforts on these customer groups, as they make the majority of purchases.
+
+### 2) Seasonality and trends
 ![image](https://github.com/user-attachments/assets/5cacf807-c413-40be-83a7-458ad3064700)
 
-На початку року (від січня до лютого) спостерігається незначне зменшення продаж, а після цього протягом року (до жовтня) відбувається плавне зростання, за винятком різких падінь продажів у червні та вересні, після чого у листопаді та грудні продажі йдуть на спад. 
-У червні продажі зменшились на 6.1% порівняно з травнем, а у вересні на 10.1% порівняно з серпнем. 
-#### а) Падіння продажів у червні
-У цьому випадку падіння продажів може бути пов'язане з кінцем фінансового року (який у Австралії закінчується 30 червня), тому що виробничі компанії хочуть використати бюджети перед завершенням року. Відфільтрувавши цей графік за покупками людей, що працюють у сфері виробництва бачимо якраз різке падіння лише у цей місяць.
+At the beginning of the year (from January to February), there is a slight decline in sales. This is followed by a gradual increase throughout the year until October, except for sharp drops in June and September. After that, sales decrease again in November and December. In June, sales fell by 6.1% compared to May, and in September, they dropped by 10.1% compared to August.
+
+#### a) Sales decline in June
+
+In this case, the sales decline could be related to the end of the financial year (which ends on June 30 in Australia), as manufacturing companies may want to use their budgets before the year ends. When filtering this chart by purchases from people working in the manufacturing sector, we observe a sharp decline specifically in this month.
 
 ![image](https://github.com/user-attachments/assets/bd3edf79-b6c0-4511-b96b-285535499302)
 
-Також зменшення покупок у червні помітне серед людей, що працюють у сфері охорони здоров'я, що може бути пов'язано з певними епідеміями, наприклад грипу, що загострюються у зимовий період.
+A decrease in purchases in June is also noticeable among people working in the healthcare sector, which could be related to certain epidemics, such as the flu, that tend to peak during the winter months (June to August in Australia).
 
 ![image](https://github.com/user-attachments/assets/be7f0396-eaef-4163-a057-1c536c9cbe33)
 
-#### б) Падіння продажів у вересні
-Серед людей, що працюють у медичній сфері зменшення покупок може бути наслідком початку весни та відповідно збільшенням кількості людей, що потерпають від сезонних алергій. 
-Також у цей період помітно різке падіння покупок серед людей, що працюють у фінансовій сфері
+#### b) Sales decline in September
+
+Among people working in the healthcare sector, the decrease in purchases may be due to the arrival of spring and the corresponding increase in the number of people suffering from seasonal allergies. Additionally, during this period, there is a noticeable sharp decline in purchases among people working in the financial sector with no clear reasons for the decrease in sales within this group.
 
 ![image](https://github.com/user-attachments/assets/a99974c4-6525-4a82-93f6-f43b2a0cb9d3)
 
-#### Висновок
+#### Conclusion
 
-Для заохочення людей купувати у малоприбуткові місяці можна ввести спеціальні акційні пропозиції, що діють лише у ті місяці.
+To boost purchases during low-revenue months a store could offer some exclusive discounts and/or promotions available only during these specific periods.
 
-### 3) Онлайн покупки
+### 3) Online purchases
 
 ![image](https://github.com/user-attachments/assets/7a0efca6-ea85-4269-855b-966019d1c34e)
 
-Помітно, що дуже незначна частина покупок здійснюється не онлайн. Це може свідчити про те, що доцільним було б зменшити кількість фізичних магазинів, що дозволить бізнесу скоротити витрати на оренду приміщення та оплату працівникам.
-
+It is clear that a very small amount of purchases are made offline. This could indicate that reducing the number of physical stores would be a strategic move, allowing the business to cut costs on rent and employee salaries. Also, this could mean that there are already very few physical stores, and that customers find it inconvenient to access them, which is the reason for the low number of offline purchases.
 
 
 
